@@ -2872,8 +2872,7 @@ function openSettings() {
     <div class="setting-row"><span><b>Reading width</b><small>How wide the page runs</small></span>${seg('width', [['narrow', 'Narrow'], ['comfortable', 'Comfy'], ['wide', 'Wide']])}</div>
     <div class="setting-row"><span><b>Text size</b><small>${Math.round(s.fontScale * 100)}%</small></span>${seg('fontScale', [[0.9, 'S'], [1, 'M'], [1.12, 'L'], [1.25, 'XL']])}</div>
     <h4>Image optimizer</h4>
-    <div class="setting-row"><span><b>Max width</b><small>Bigger images are scaled down, smaller ones are never enlarged</small></span>${seg('imgMaxWidth', [[1200, '1200'], [1600, '1600'], [2000, '2000'], [2560, '2560']])}</div>
-    <div class="setting-row"><span><b>Quality</b><small>82 is the sweet spot for blogs</small></span>${seg('imgQuality', [[70, 'Small'], [82, 'Balanced'], [90, 'High']])}</div>
+    <div class="setting-row"><span><b>Size, shape, quality and format</b><small>Set in Image Studio, where you can pick a recipe like Blog post or Pinterest pin</small></span><button class="btn sm btn-ghost" id="open-studio-set">${icon('image')}Open Image Studio</button></div>
     <h4>Behavior</h4>
     ${toggle('autosave', 'Autosave', 'Save edits automatically as you type')}
     ${toggle('restoreSession', 'Reopen last session', 'Bring back your folder and tabs when Tomelight starts')}
@@ -2885,6 +2884,7 @@ function openSettings() {
     <div class="setting-row"><span><b>Delete every note in Tomelight</b><small id="notes-total">Counting…</small></span><button class="btn sm btn-ghost btn-danger" id="wipe-notes">Delete all</button></div>
   `, 'settings');
   api.notesCount().then((c) => { const el = m.querySelector('#notes-total'); if (el) el.textContent = c.notes ? `${c.notes} note${c.notes > 1 ? 's' : ''} across ${c.files} file${c.files > 1 ? 's' : ''}. Your files are never touched.` : 'No notes yet.'; });
+  m.querySelector('#open-studio-set').onclick = () => { closeModal(); openStudio(); };
   m.querySelector('#wipe-notes').onclick = async () => {
     const c = await api.notesCount();
     if (!c.notes) { toast('No notes to delete', 'quiet'); return; }

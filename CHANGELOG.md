@@ -13,6 +13,9 @@ All notable changes to Tomelight are listed here. Dates are in YYYY-MM-DD.
 - Highlights find their sentence again after your AI rewrites the file. Passages that were rewritten are flagged, left out of the feedback, and can be cleared in one click.
 - Highlights panel (click the count in the status bar) to see, jump to, copy as Markdown or remove every highlight on a file.
 
+### Changed
+- Image settings now live in one place. Settings used to show its own Max width and Quality buttons with different sizes than Image Studio; it now opens Image Studio instead.
+
 ## [1.0.1] - 2026-10-01
 
 ### Changed
