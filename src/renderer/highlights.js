@@ -7,12 +7,12 @@
 /** The 4 colors, each with a meaning that carries into the AI feedback prompt. */
 export const HL_COLORS = [
   { id: 'yellow', label: 'Important', heading: 'Pay attention to these' },
-  { id: 'pink', label: 'Fix this', heading: 'Fix these' },
+  { id: 'red', label: 'Fix this', heading: 'Fix these' },
   { id: 'cyan', label: 'Question', heading: 'Answer these questions' },
   { id: 'green', label: 'Keep', heading: 'Keep these as they are' },
 ];
-export const HL_ORDER = ['pink', 'cyan', 'yellow', 'green'];
-export const hlColor = (id) => HL_COLORS.find((c) => c.id === id) || HL_COLORS[0];
+export const HL_ORDER = ['red', 'cyan', 'yellow', 'green'];
+export const hlColor = (id) => HL_COLORS.find((c) => c.id === (id === 'pink' ? 'red' : id)) || HL_COLORS[0];
 
 const CTX = 32;
 
@@ -82,7 +82,7 @@ export function feedbackPrompt(fileName, list) {
   const out = [`Here's my feedback on "${fileName}". I highlighted these passages while reading it. Please revise the document with these notes in mind.`];
   let n = 0;
   for (const id of HL_ORDER) {
-    const group = items.filter((h) => (h.color || 'yellow') === id);
+    const group = items.filter((h) => hlColor(h.color).id === id);
     if (!group.length) continue;
     out.push('', `${hlColor(id).heading}:`);
     for (const h of group) {

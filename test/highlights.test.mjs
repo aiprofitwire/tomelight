@@ -42,7 +42,7 @@ test('a deleted quote returns null instead of guessing', () => {
 test('feedbackPrompt groups by meaning, fixes first, with notes', () => {
   const list = [
     { color: 'green', exact: 'Ship the demo', pos: 0.9 },
-    { color: 'pink', exact: 'Budget is $750', note: 'Should be $900', pos: 0.2 },
+    { color: 'red', exact: 'Budget is $750', note: 'Should be $900', pos: 0.2 },
     { color: 'cyan', exact: 'if the test works', pos: 0.7 },
   ];
   const p = feedbackPrompt('plan.md', list);

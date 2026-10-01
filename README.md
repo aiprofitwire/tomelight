@@ -71,7 +71,7 @@ Pin a note to any section of a Markdown or HTML file. Notes live inside Tomeligh
 <img src="docs/screens/notes.png" alt="A sticky note next to a section of a document" width="100%" />
 
 ### Highlight, then hand it back to your AI
-Select any passage and pick a color: yellow for Important, pink for Fix this, blue for Question, green for Keep. Click a highlight to add a note. When you're done reading, **Copy as AI feedback** turns everything into one message, grouped by what to fix, what to answer and what to keep, ready to paste into ChatGPT, Claude or Gemini. Highlights live inside Tomelight like your notes, so the file is never touched, and they find their place again after the AI rewrites it.
+Select any passage and pick a color: yellow for Important, red for Fix this, blue for Question, green for Keep. Click a highlight to add a note. When you're done reading, **Copy as AI feedback** turns everything into one message, grouped by what to fix, what to answer and what to keep, ready to paste into ChatGPT, Claude or Gemini. Highlights live inside Tomelight like your notes, so the file is never touched, and they find their place again after the AI rewrites it.
 
 <img src="docs/screens/highlights.png" alt="Highlights in 4 colors with a note popover open on a newsletter draft" width="100%" />
 

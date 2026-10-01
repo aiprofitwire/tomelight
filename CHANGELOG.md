@@ -8,7 +8,7 @@ All notable changes to Tomelight are listed here. Dates are in YYYY-MM-DD.
 
 ### Added
 - Highlighter. Select text in Read or Reader view and pick a color from the selection bar, or press `⇧⌘H`. Highlights are painted over the page and stored inside Tomelight, so your file is never changed.
-- Each color means something: yellow is Important, pink is Fix this, blue is Question, green is Keep. Click any highlight to change its color, add a note or remove it.
+- Each color means something: yellow is Important, red is Fix this, blue is Question, green is Keep. Click any highlight to change its color, add a note or remove it.
 - Copy as AI feedback. One click turns your highlights and notes into a ready-made message, grouped by fixes, questions, what matters and what to keep, that you paste back into ChatGPT, Claude or Gemini.
 - Highlights find their sentence again after your AI rewrites the file. Passages that were rewritten are flagged, left out of the feedback, and can be cleared in one click.
 - Highlights panel (click the count in the status bar) to see, jump to, copy as Markdown or remove every highlight on a file.

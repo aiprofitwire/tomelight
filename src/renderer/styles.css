@@ -1398,23 +1398,23 @@ body.exported .tome { animation: none; }
 
 /* ---------- Highlighter (painted over the page, never written into the file) ---------- */
 :root {
-  --hl-yellow: rgba(250, 204, 21, .42); --hl-pink: rgba(255, 0, 110, .30);
+  --hl-yellow: rgba(250, 204, 21, .42); --hl-red: rgba(255, 59, 48, .34);
   --hl-cyan: rgba(0, 200, 255, .28); --hl-green: rgba(46, 204, 113, .30);
-  --hl-yellow-s: #ffd60a; --hl-pink-s: #ff3d8b; --hl-cyan-s: #22c8ff; --hl-green-s: #2ecc71;
+  --hl-yellow-s: #ffd60a; --hl-red-s: #ff453a; --hl-cyan-s: #22c8ff; --hl-green-s: #2ecc71;
 }
 .theme-parchment {
-  --hl-yellow: rgba(255, 200, 0, .45); --hl-pink: rgba(240, 40, 120, .26);
+  --hl-yellow: rgba(255, 200, 0, .45); --hl-red: rgba(220, 38, 38, .24);
   --hl-cyan: rgba(0, 160, 230, .24); --hl-green: rgba(40, 180, 90, .28);
 }
 ::highlight(tl-hl-yellow), ::highlight(tl-hl-yellow-n) { background-color: var(--hl-yellow); }
-::highlight(tl-hl-pink), ::highlight(tl-hl-pink-n) { background-color: var(--hl-pink); }
+::highlight(tl-hl-red), ::highlight(tl-hl-red-n) { background-color: var(--hl-red); }
 ::highlight(tl-hl-cyan), ::highlight(tl-hl-cyan-n) { background-color: var(--hl-cyan); }
 ::highlight(tl-hl-green), ::highlight(tl-hl-green-n) { background-color: var(--hl-green); }
-::highlight(tl-hl-yellow-n), ::highlight(tl-hl-pink-n), ::highlight(tl-hl-cyan-n), ::highlight(tl-hl-green-n) {
+::highlight(tl-hl-yellow-n), ::highlight(tl-hl-red-n), ::highlight(tl-hl-cyan-n), ::highlight(tl-hl-green-n) {
   text-decoration: underline dotted; text-decoration-thickness: 2px; text-underline-offset: 3px;
 }
 ::highlight(tl-hl-flash) { background-color: var(--accent-glow); text-decoration: underline solid var(--accent); text-decoration-thickness: 2px; }
-.c-yellow { --hc: var(--hl-yellow-s); } .c-pink { --hc: var(--hl-pink-s); } .c-cyan { --hc: var(--hl-cyan-s); } .c-green { --hc: var(--hl-green-s); }
+.c-yellow { --hc: var(--hl-yellow-s); } .c-red { --hc: var(--hl-red-s); } .c-cyan { --hc: var(--hl-cyan-s); } .c-green { --hc: var(--hl-green-s); }
 
 .sel-bubble .sb-hls { display: inline-flex; gap: 0; }
 .sel-bubble .sb-hl-dot { min-width: 24px; padding: 0 4px; }
