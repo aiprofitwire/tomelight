@@ -64,7 +64,7 @@ ipcMain.handle('page:preview', (_e, { file, html }) => {
 /* Settings                                                            */
 /* ------------------------------------------------------------------ */
 const DEFAULT_SETTINGS = {
-  theme: 'auto',            // auto | arcane | parchment | nebula | wire
+  theme: 'wire',            // wire | auto | arcane | parchment | nebula
   bodyFont: 'sans',         // sans | serif
   width: 'comfortable',     // narrow | comfortable | wide
   fontScale: 1,
@@ -165,7 +165,7 @@ function createWindow({ restore = false } = {}) {
     minWidth: 640,
     minHeight: 440,
     show: false,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#090e1c' : '#f5efe3',
+    backgroundColor: ({ wire: '#091516', nebula: '#090e1c', arcane: '#0d0c12', parchment: '#f6f0e4' })[settings.theme] || (nativeTheme.shouldUseDarkColors ? '#090e1c' : '#f5efe3'),
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 17 },
     webPreferences: {
@@ -684,11 +684,11 @@ function buildMenu() {
         { label: 'Focus Mode', accelerator: 'CmdOrCtrl+Shift+F', click: () => send('ui:focus') },
         { type: 'separator' },
         { label: 'Theme', submenu: [
-          themeItem('auto', 'Auto (Follow macOS)'),
+          themeItem('wire', 'Wire (Cyber-Noir)'),
+          themeItem('nebula', 'Nebula (Midnight Blue)'),
           themeItem('arcane', 'Arcane (Dark)'),
           themeItem('parchment', 'Parchment (Light)'),
-          themeItem('nebula', 'Nebula (Midnight Blue)'),
-          themeItem('wire', 'Wire (Cyber-Noir)'),
+          themeItem('auto', 'Auto (Follow macOS)'),
         ] },
         { type: 'separator' },
         { label: 'Bigger Text', accelerator: 'CmdOrCtrl+=', click: () => send('view:zoom', 1) },
@@ -744,7 +744,9 @@ function argPaths(argv) {
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
-  app.quit();
+  // Another copy is already running and will open whatever we were given.
+  // Exit right away: a graceful quit() before the app is ready can crash on macOS.
+  app.exit(0);
 } else {
   app.on('second-instance', (_e, argv) => {
     const files = argPaths(argv.slice(1));

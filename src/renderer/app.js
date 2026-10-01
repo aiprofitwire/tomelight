@@ -2533,11 +2533,11 @@ function openSettings() {
     <h2>${icon('sliders')} Settings</h2>
     <h4>Theme</h4>
     <div class="theme-grid">
-      ${themeCard('auto', 'Auto', 'Follows macOS')}
+      ${themeCard('wire', 'Wire', 'Cyber-noir')}
       ${themeCard('nebula', 'Nebula', 'Midnight starlight')}
       ${themeCard('arcane', 'Arcane', 'Ink and gold')}
       ${themeCard('parchment', 'Parchment', 'Warm paper')}
-      ${themeCard('wire', 'Wire', 'Cyber-noir')}
+      ${themeCard('auto', 'Auto', 'Follows macOS')}
     </div>
     <h4>Reading</h4>
     <div class="setting-row"><span><b>Body font</b><small>Headings use the theme's display font</small></span>${seg('bodyFont', [['sans', 'Sans'], ['serif', 'Serif']])}</div>

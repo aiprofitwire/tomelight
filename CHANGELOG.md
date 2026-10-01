@@ -4,6 +4,14 @@ All notable changes to Tomelight are listed here. Dates are in YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-01
+
+### Changed
+- Wire is now the default theme for new installs. Every other theme is still one click away in Settings.
+
+### Fixed
+- Opening Tomelight while an older copy was still running in the background could crash the new copy. It now hands off to the running copy and exits cleanly.
+
 ## [1.0.0] - 2026-10-01
 
 The first public release.

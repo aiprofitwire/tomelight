@@ -71,7 +71,7 @@ Pin a note to any section of a Markdown or HTML file. Notes live inside Tomeligh
 <img src="docs/screens/notes.png" alt="A sticky note next to a section of a document" width="100%" />
 
 ### Themes
-Nebula, Arcane, Parchment and Wire (the cyber-noir palette from Metadata Marketer), plus Auto to follow macOS.
+Wire (the default, a cyber-noir palette from Metadata Marketer), Nebula, Arcane and Parchment, plus Auto to follow macOS light and dark mode.
 
 <img src="docs/screens/themes.png" alt="The Wire, Nebula, Parchment and Arcane themes" width="100%" />
 

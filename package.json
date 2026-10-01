@@ -1,7 +1,7 @@
 {
   "name": "tomelight",
   "productName": "Tomelight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A beautiful Mac reader and editor for the Markdown and HTML files your AI tools hand you. Tick boxes in place, copy clean for email and social, and shrink images to WebP.",
   "keywords": [
     "markdown",
