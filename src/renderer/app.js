@@ -12,6 +12,7 @@ import { icon, emblem } from './icons.js';
 import { optimizeImage, prettyBytes, altFromName, IMG_RE, seoName, scrubMetadata } from './webp.js';
 import { zipSync } from 'fflate';
 import { cleanFragment, toHtml, toPlain, socialCounts, htmlToMarkdown } from './copyas.js';
+import { HL_COLORS, hlColor, quoteAnchor, resolveAnchor, feedbackPrompt, highlightsMarkdown, inDocOrder } from './highlights.js';
 
 const api = window.tomelight;
 const $ = (s, el = document) => el.querySelector(s);
@@ -79,6 +80,7 @@ async function boot() {
   bindSelection();
   bindStudio();
   bindNotes();
+  bindHighlights();
   bindLinkPop();
   bindCommands();
 
@@ -305,6 +307,7 @@ async function openTab(file, { activate: act = true, quiet = false, mode = null 
   };
   if (kind !== 'html') t.render = renderMarkdown(t.content, { plain: kind === 'txt' });
   await ensureNotes(t);
+  await ensureHighlights(t);
   const at = state.tabs.findIndex((x) => x.id === state.activeId);
   state.tabs.splice(at >= 0 ? at + 1 : state.tabs.length, 0, t);
   api.watchFiles(state.tabs.map((x) => x.file));
@@ -1242,6 +1245,10 @@ function commands() {
     t && t.notes && t.notes.some((n) => n.text.trim()) && { title: 'Manage notes on this file (view, jump, delete)', icon: 'sticky', run: openNotesManager },
     t && t.notes && t.notes.some((n) => n.text.trim()) && { title: 'Delete all notes on this file', icon: 'x', run: () => { if (window.confirm(`Delete all notes on ${t.doc.name}? The file itself is not changed.`)) removeNotes(t, t.notes.map((n) => n.id)); } },
     t && t.notes && t.notes.some((n) => n.text.trim()) && { title: 'Copy all notes on this file (Markdown)', icon: 'clipboard', run: copyAllNotes },
+    t && { title: 'Highlight selection', icon: 'highlighter', keys: `⇧${MOD}H`, run: () => addHighlight() },
+    t && t.hls && t.hls.length && { title: 'Copy highlights as AI feedback (paste into ChatGPT, Claude or Gemini)', icon: 'highlighter', run: copyHlFeedback },
+    t && t.hls && t.hls.length && { title: 'Manage highlights on this file', icon: 'highlighter', run: openHlManager },
+    t && t.hls && t.hls.length && { title: 'Copy highlights as Markdown', icon: 'clipboard', run: copyHlMarkdown },
     t && { title: 'Focus mode', icon: 'focus', keys: `⇧${MOD}F`, run: toggleFocus },
     t && { title: 'Find in file', icon: 'search', keys: `${MOD}F`, run: openFind },
     { title: 'Theme: Auto (follow macOS)', icon: 'palette', run: () => setSetting({ theme: 'auto' }) },
@@ -1880,6 +1887,7 @@ function showSelBubble() {
     <button type="button" data-sel="plain" data-tip="Copy as plain text for social">${icon('share')}</button>
     <span class="sb-div"></span>
     <button type="button" data-sel="note" data-tip="Stick a note on this">${icon('sticky')}</button>
+    ${hlVisible(cur()) ? `<span class="sb-div"></span><span class="sb-hls">${HL_COLORS.map((c) => `<button type="button" data-sel="hl" data-c="${c.id}" class="sb-hl-dot c-${c.id}" data-tip="Highlight: ${c.label}"><i></i></button>`).join('')}</span>` : ''}
     <span class="sb-count">${c.chars.toLocaleString()} chars</span>`;
   b.hidden = false;
   const rects = [...r.getClientRects()].filter((x) => x.width > 1);
@@ -1920,6 +1928,7 @@ function bindSelection() {
       addNote(block, quote);
       return;
     }
+    if (btn.dataset.sel === 'hl') { addHighlight(btn.dataset.c); return; }
     if (btn.dataset.sel === 'copy') copySelectionClean(); else copyAs(btn.dataset.sel);
   });
   // ⌘C inside the page: copy only the selection, without app styling.
@@ -2047,6 +2056,7 @@ function renderNotes() {
   const ae = document.activeElement;
   const typing = ae && ae.classList && ae.classList.contains('sk-text') ? { id: ae.closest('.sticky').dataset.id, s: ae.selectionStart, e: ae.selectionEnd } : null;
   renderNotesInner();
+  renderHighlights();
   if (typing) {
     const ta = state.noteEls.get(typing.id)?.querySelector('.sk-text');
     if (ta && document.activeElement !== ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(typing.s, typing.e); }
@@ -2313,6 +2323,322 @@ function bindNotes() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Highlighter: colored marks that live only in Tomelight, like notes.   */
+/* Painted with the CSS Custom Highlight API, so the page DOM and the    */
+/* file on disk are never changed.                                       */
+/* ------------------------------------------------------------------ */
+state.hlRanges = [];
+state.hlLast = 'yellow';
+const HL_SKIP = '.sticky, button, .ghost-check, .code-head, .mermaid-out, .mermaid-src, script, style, textarea';
+const HL_BLOCK = 'p, li, h1, h2, h3, h4, h5, h6, td, th, pre, blockquote, dt, dd, figcaption, caption';
+
+async function ensureHighlights(t) {
+  if (!t.hls) t.hls = (await api.hlGet(t.file)) || [];
+  return t.hls;
+}
+function saveHighlights(t) {
+  clearTimeout(t.hlTimer);
+  t.hlTimer = setTimeout(() => api.hlSet(t.file, t.hls), 250);
+  updateHlCount();
+}
+function updateHlCount() {
+  const t = cur();
+  const el = $('#sb-hl');
+  if (!el) return;
+  const n = t && t.hls ? t.hls.length : 0;
+  el.hidden = !n;
+  el.innerHTML = n ? `${icon('highlighter')}${n} highlight${n > 1 ? 's' : ''}` : '';
+}
+/** Highlights are drawn wherever the rendered page is in the app's own DOM. */
+function hlVisible(t) {
+  if (!t || t.mode === 'source' || t.mode === 'write') return false;
+  if (t.kind === 'html' && (t.mode === 'read' || t.mode === 'split')) return false;
+  return true;
+}
+
+/** Every readable text node in the page with its offset in one long string. Blocks are split by a newline. */
+function hlIndex(root = $('#tome')) {
+  const nodes = [];
+  let text = '';
+  let lastBlock = null;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement.closest(HL_SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  let n;
+  while ((n = walker.nextNode())) {
+    if (!n.data) continue;
+    const inBlock = n.parentElement.closest(HL_BLOCK);
+    if (!inBlock && !n.data.trim()) continue; // layout whitespace between blocks
+    const block = inBlock || n.parentElement;
+    if (block !== lastBlock && text && !text.endsWith('\n')) text += '\n';
+    lastBlock = block;
+    nodes.push({ node: n, start: text.length });
+    text += n.data;
+  }
+  return { nodes, text };
+}
+/** Turn a DOM boundary point into an offset in the index string. */
+function hlOffset(ix, container, offset) {
+  const hit = ix.nodes.find((x) => x.node === container);
+  if (hit) return hit.start + Math.min(offset, container.data.length);
+  const probe = document.createRange();
+  probe.setStart(container, offset);
+  for (const x of ix.nodes) if (probe.comparePoint(x.node, 0) >= 0) return x.start;
+  return ix.text.length;
+}
+/** Turn an index span back into a live DOM Range. */
+function hlRange(ix, s, e) {
+  let a = null; let b = null;
+  for (const x of ix.nodes) {
+    const end = x.start + x.node.data.length;
+    if (!a && s < end && s >= x.start) a = { node: x.node, off: s - x.start };
+    if (e > x.start && e <= end) b = { node: x.node, off: e - x.start };
+  }
+  if (!a || !b) return null;
+  const r = document.createRange();
+  r.setStart(a.node, a.off); r.setEnd(b.node, b.off);
+  return r;
+}
+
+const HL_KEYS = HL_COLORS.flatMap((c) => [`tl-hl-${c.id}`, `tl-hl-${c.id}-n`]);
+function renderHighlights() {
+  if (!(window.CSS && CSS.highlights)) return;
+  HL_KEYS.forEach((k) => CSS.highlights.delete(k));
+  state.hlRanges = [];
+  updateHlCount();
+  const t = cur();
+  if (!t || !t.hls || !t.hls.length || !hlVisible(t)) return;
+  const ix = hlIndex();
+  const groups = new Map();
+  let refreshed = false;
+  for (const h of t.hls) {
+    const span = resolveAnchor(ix.text, h);
+    h.lost = !span;
+    if (!span) continue;
+    const r = hlRange(ix, span.start, span.end);
+    if (!r) { h.lost = true; continue; }
+    // Re-anchor to the text as it reads now, so it keeps up with the next rewrite too.
+    const fresh = quoteAnchor(ix.text, span.start, span.end);
+    if (fresh.prefix !== h.prefix || fresh.suffix !== h.suffix || fresh.exact !== h.exact) { Object.assign(h, fresh); refreshed = true; }
+    else h.pos = fresh.pos;
+    state.hlRanges.push({ id: h.id, range: r });
+    const key = `tl-hl-${hlColor(h.color).id}${h.note && h.note.trim() ? '-n' : ''}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  for (const [key, ranges] of groups) {
+    const hl = new Highlight(...ranges);
+    hl.priority = -1; // find results paint on top
+    CSS.highlights.set(key, hl);
+  }
+  if (refreshed) saveHighlights(t);
+}
+
+async function addHighlight(color = state.hlLast) {
+  const t = cur();
+  if (!t) return;
+  if (!hlVisible(t)) {
+    toast(t.kind === 'html' ? 'Switch to Reader view to highlight this page' : 'Switch to Read view to highlight', 'quiet');
+    return;
+  }
+  const r = tomeSelection();
+  if (!r) { toast('Select some text first, then highlight it', 'quiet'); return; }
+  await ensureHighlights(t);
+  const ix = hlIndex();
+  let s = hlOffset(ix, r.startContainer, r.startOffset);
+  let e = hlOffset(ix, r.endContainer, r.endOffset);
+  while (s < e && /\s/.test(ix.text[s])) s++;
+  while (e > s && /\s/.test(ix.text[e - 1])) e--;
+  if (e <= s) return;
+  window.getSelection().removeAllRanges();
+  hideSelBubble();
+  state.hlLast = hlColor(color).id;
+  // Highlighting over an existing mark of the same span just recolors it.
+  const same = t.hls.find((h) => { const sp = resolveAnchor(ix.text, h); return sp && sp.start === s && sp.end === e; });
+  if (same) { same.color = state.hlLast; saveHighlights(t); renderHighlights(); return; }
+  const now = Date.now();
+  t.hls.push({ id: `h${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, color: state.hlLast, note: '', created: now, ...quoteAnchor(ix.text, s, e) });
+  saveHighlights(t);
+  renderHighlights();
+  if (!state.settings.hlTipSeen) {
+    setSetting({ hlTipSeen: true });
+    toast('Highlighted. Your file is not changed. Click a highlight to add a note or change its color.', 'ok');
+  }
+}
+function removeHighlights(t, ids, { silent = false } = {}) {
+  const set = new Set(ids);
+  const before = t.hls.slice();
+  const n = t.hls.filter((h) => set.has(h.id)).length;
+  if (!n) return;
+  t.hls = t.hls.filter((h) => !set.has(h.id));
+  saveHighlights(t);
+  renderHighlights();
+  closeHlPop();
+  if (!silent) toast(`${n} highlight${n > 1 ? 's' : ''} removed`, 'quiet', { action: 'Undo', run: () => { t.hls = before; saveHighlights(t); renderHighlights(); } });
+}
+function flashRange(range) {
+  if (!range || !CSS.highlights) return;
+  const pane = $('#preview-pane');
+  const rect = range.getBoundingClientRect();
+  const pr = pane.getBoundingClientRect();
+  pane.scrollTo({ top: pane.scrollTop + rect.top - pr.top - pane.clientHeight / 3, behavior: 'smooth' });
+  CSS.highlights.set('tl-hl-flash', new Highlight(range));
+  clearTimeout(state.hlFlashTimer);
+  state.hlFlashTimer = setTimeout(() => CSS.highlights.delete('tl-hl-flash'), 1400);
+}
+
+/* ---- the little popover you get by clicking a highlight ---- */
+const hlPop = () => $('#hl-pop');
+function closeHlPop() { const p = hlPop(); if (p && !p.hidden) { p.hidden = true; p.dataset.id = ''; } }
+function hlAtPoint(x, y) {
+  let node; let off;
+  if (document.caretPositionFromPoint) { const c = document.caretPositionFromPoint(x, y); if (c) { node = c.offsetNode; off = c.offset; } }
+  else if (document.caretRangeFromPoint) { const c = document.caretRangeFromPoint(x, y); if (c) { node = c.startContainer; off = c.startOffset; } }
+  if (!node) return null;
+  // the caret can land just past the last letter, so also check the rectangles
+  return state.hlRanges.find(({ range }) => {
+    try { if (range.isPointInRange(node, off) && range.comparePoint(node, off) === 0) {
+      return [...range.getClientRects()].some((b) => x >= b.left - 1 && x <= b.right + 1 && y >= b.top - 1 && y <= b.bottom + 1);
+    } } catch { /* node outside the range's tree */ }
+    return false;
+  }) || null;
+}
+function openHlPop(id) {
+  const t = cur();
+  const h = t && t.hls && t.hls.find((x) => x.id === id);
+  const hit = state.hlRanges.find((x) => x.id === id);
+  if (!h || !hit) return;
+  const p = hlPop();
+  p.dataset.id = id;
+  p.innerHTML = `
+    <div class="hp-colors">${HL_COLORS.map((c) => `<button type="button" data-hp="color" data-c="${c.id}" class="hp-c c-${c.id} ${h.color === c.id ? 'active' : ''}"><i></i>${c.label}</button>`).join('')}</div>
+    <input class="hp-note" type="text" placeholder="Add a note for your AI…" spellcheck="true" />
+    <div class="hp-foot">
+      <button type="button" class="btn sm btn-ghost" data-hp="all">${icon('list')}All highlights</button>
+      <button type="button" class="btn sm btn-ghost btn-danger" data-hp="del">${icon('x')}Remove</button>
+    </div>`;
+  const input = p.querySelector('.hp-note');
+  input.value = h.note || '';
+  p.hidden = false;
+  const rects = [...hit.range.getClientRects()].filter((x) => x.width > 1);
+  const last = rects[rects.length - 1] || hit.range.getBoundingClientRect();
+  const stage = $('#stage').getBoundingClientRect();
+  const pw = p.offsetWidth; const ph = p.offsetHeight;
+  let top = last.bottom + 8;
+  if (top + ph > stage.bottom - 8) top = (rects[0] || last).top - ph - 8;
+  const left = Math.max(stage.left + 8, Math.min(last.left + last.width / 2 - pw / 2, stage.right - pw - 8));
+  p.style.top = `${Math.max(stage.top + 6, top)}px`;
+  p.style.left = `${left}px`;
+  requestAnimationFrame(() => input.focus());
+}
+function bindHighlights() {
+  const p = hlPop();
+  $('#tome').addEventListener('click', (e) => {
+    if (!state.hlRanges.length) return;
+    if (e.target.closest('a, button, input, textarea, .sticky, summary')) return;
+    const { clientX: x, clientY: y } = e;
+    setTimeout(() => { // let a click inside an old selection collapse it first
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().trim()) return;
+      const hit = hlAtPoint(x, y);
+      if (hit) openHlPop(hit.id); else closeHlPop();
+    }, 0);
+  });
+  p.addEventListener('mousedown', (e) => e.stopPropagation());
+  p.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-hp]');
+    if (!b) return;
+    const t = cur();
+    const h = t && t.hls && t.hls.find((x) => x.id === p.dataset.id);
+    if (!h) return;
+    const k = b.dataset.hp;
+    if (k === 'color') {
+      h.color = b.dataset.c; state.hlLast = h.color;
+      p.querySelectorAll('.hp-c').forEach((x) => x.classList.toggle('active', x === b));
+      saveHighlights(t); renderHighlights();
+    }
+    if (k === 'del') removeHighlights(t, [h.id]);
+    if (k === 'all') { closeHlPop(); openHlManager(); }
+  });
+  p.addEventListener('input', (e) => {
+    if (!e.target.classList.contains('hp-note')) return;
+    const t = cur();
+    const h = t && t.hls && t.hls.find((x) => x.id === p.dataset.id);
+    if (!h) return;
+    const had = !!(h.note && h.note.trim());
+    h.note = e.target.value;
+    saveHighlights(t);
+    if (had !== !!h.note.trim()) renderHighlights();
+  });
+  p.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); closeHlPop(); } });
+  document.addEventListener('mousedown', (e) => { if (!p.hidden && !e.target.closest('#hl-pop')) closeHlPop(); });
+  $('#preview-pane').addEventListener('scroll', closeHlPop, { passive: true });
+  $('#sb-hl').onclick = openHlManager;
+}
+
+/* ---- every highlight on a file, plus the AI feedback export ---- */
+function copyHlFeedback() {
+  const t = cur();
+  const all = (t && t.hls) || [];
+  if (!all.length) { toast('No highlights on this file yet. Select text and pick a color.', 'quiet'); return; }
+  // Passages the AI already rewrote are left out: that feedback was handled.
+  const list = all.filter((h) => !h.lost);
+  if (!list.length) { toast('The text you highlighted has changed since. Remove the old highlights and mark up the new version.', 'quiet'); return; }
+  clip.write(null, feedbackPrompt(t.doc.name, list));
+  const skipped = all.length - list.length;
+  toast(`${list.length} highlight${list.length > 1 ? 's' : ''} copied as AI feedback${skipped ? ` (${skipped} skipped, text changed)` : ''}. Paste it into ChatGPT, Claude or Gemini.`, 'ok');
+}
+function copyHlMarkdown() {
+  const t = cur();
+  const list = (t && t.hls) || [];
+  if (!list.length) return;
+  clip.write(null, highlightsMarkdown(t.doc.name, list));
+  toast(`${list.length} highlight${list.length > 1 ? 's' : ''} copied as Markdown`, 'ok');
+}
+function openHlManager() {
+  const t = cur();
+  if (!t) return;
+  const list = inDocOrder(t.hls || []);
+  if (!list.length) { toast('No highlights on this file yet. Select text and pick a color.', 'quiet'); return; }
+  const clipq = (s, n) => { const c = normText(s); return c.length > n ? `${c.slice(0, n - 1)}…` : c; };
+  const m = openModal(`
+    <h2>${icon('highlighter')} Highlights on ${escapeHtml(t.doc.name)}</h2>
+    <p class="modal-foot" style="margin-top:-8px">These live only in Tomelight. Removing them never changes the file.</p>
+    <div class="hl-legend">${HL_COLORS.map((c) => `<span class="hl-chip c-${c.id}"><i></i>${c.label}</span>`).join('')}</div>
+    ${list.map((h) => `
+      <div class="nm-row hm-row" data-id="${h.id}">
+        <span class="hl-chip c-${hlColor(h.color).id}" title="${hlColor(h.color).label}"><i></i></span>
+        <span class="nm-text"><q>${escapeHtml(clipq(h.exact, 180))}</q><small>${h.note && h.note.trim() ? `${escapeHtml(h.note.trim())} · ` : ''}${hlColor(h.color).label}${h.lost ? ' · text changed, not found' : ''}</small></span>
+        <span class="nm-actions">
+          ${h.lost || !hlVisible(t) ? '' : `<button class="icon-btn xs" data-hm="jump" data-tip="Go to highlight">${icon('target')}</button>`}
+          <button class="icon-btn xs" data-hm="del" data-tip="Remove highlight">${icon('x')}</button>
+        </span>
+      </div>`).join('')}
+    <div class="nm-foot">
+      <span>
+        <button class="btn sm btn-primary" data-hm="feedback">${icon('sparkles')}Copy as AI feedback</button>
+        <button class="btn sm btn-ghost" data-hm="md">${icon('clipboard')}Copy as Markdown</button>
+      </span>
+      <span>
+        ${list.some((h) => h.lost) ? `<button class="btn sm btn-ghost" data-hm="del-lost">${icon('x')}Remove ${list.filter((h) => h.lost).length} that changed</button>` : ''}
+        <button class="btn sm btn-ghost btn-danger" data-hm="del-all">${icon('x')}Remove all ${list.length}</button>
+      </span>
+    </div>`, 'notes-manager hl-manager');
+  m.onclick = (e) => {
+    const b = e.target.closest('[data-hm]');
+    if (!b) return;
+    const k = b.dataset.hm;
+    const row = b.closest('.hm-row');
+    if (k === 'jump' && row) { closeModal(); flashRange(state.hlRanges.find((x) => x.id === row.dataset.id)?.range); }
+    if (k === 'del' && row) { removeHighlights(t, [row.dataset.id]); if (t.hls.length) openHlManager(); else closeModal(); }
+    if (k === 'del-all') { closeModal(); removeHighlights(t, t.hls.map((h) => h.id)); }
+    if (k === 'del-lost') { removeHighlights(t, t.hls.filter((h) => h.lost).map((h) => h.id)); if (t.hls.length) openHlManager(); else closeModal(); }
+    if (k === 'feedback') { copyHlFeedback(); closeModal(); }
+    if (k === 'md') copyHlMarkdown();
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Write mode: type like Google Docs, saved as clean Markdown           */
 /* ------------------------------------------------------------------ */
 function bodyParts(content) {
@@ -2497,6 +2823,8 @@ function openMoreMenu(anchor) {
     t && { label: 'Add sticky note', icon: 'sticky', keys: `⌥${MOD}N`, run: () => addNote() },
     t && { label: notesOn() ? 'Hide sticky notes' : 'Show sticky notes', icon: 'sticky', keys: `⇧⌥${MOD}N`, run: toggleNotesVisible },
     t && t.notes && t.notes.some((n) => n.text.trim()) && { label: 'Manage notes…', icon: 'sticky', run: openNotesManager },
+    t && t.hls && t.hls.length && { label: 'Highlights…', icon: 'highlighter', run: openHlManager },
+    t && t.hls && t.hls.length && { label: 'Copy highlights as AI feedback', icon: 'sparkles', run: copyHlFeedback },
     { sep: true },
     { label: 'Focus mode', icon: 'focus', run: toggleFocus },
     { label: 'Settings…', icon: 'sliders', keys: `${MOD},`, run: openSettings },
@@ -2588,7 +2916,7 @@ function openShortcuts() {
     ['Mark as done', `${MOD}D`], ['Complete all tasks', `⇧${MOD}D`], ['Toggle task on line (editor)', `${MOD}↩`],
     ['Bold / italic (editor)', `${MOD}B / ${MOD}I`], ['Find', `${MOD}F`], ['Undo / redo', `${MOD}Z / ⇧${MOD}Z`],
     ['Toggle sidebar', `${MOD}\\`], ['Folder / Outline panel', `⇧${MOD}1 / ⇧${MOD}2`], ['Focus mode', `⇧${MOD}F`],
-    ['Text size', `${MOD}+ / ${MOD}−`], ['Copy for email / web / social', `⇧${MOD}C / ⌥${MOD}H / ⌥${MOD}C`], ['Paste as Markdown', `⇧${MOD}V`], ['Image Studio (or just drop photos in)', `⇧${MOD}I`], ['Add sticky note / show or hide notes', `⌥${MOD}N / ⇧⌥${MOD}N`],
+    ['Text size', `${MOD}+ / ${MOD}−`], ['Copy for email / web / social', `⇧${MOD}C / ⌥${MOD}H / ⌥${MOD}C`], ['Paste as Markdown', `⇧${MOD}V`], ['Image Studio (or just drop photos in)', `⇧${MOD}I`], ['Add sticky note / show or hide notes', `⌥${MOD}N / ⇧⌥${MOD}N`], ['Highlight selection', `⇧${MOD}H`],
     ['Export PDF / HTML', `⇧${MOD}P / ⇧${MOD}E`], ['Reveal in Finder', `⇧${MOD}R`], ['Settings', `${MOD},`],
   ];
   openModal(`<h2>${icon('keyboard')} Keyboard Shortcuts</h2>
@@ -3085,6 +3413,8 @@ function bindCommands() {
       case 'img:optimize': toggleStudio(); break;
       case 'note:add': addNote(); break;
       case 'note:toggle': toggleNotesVisible(); break;
+      case 'hl:add': addHighlight(); break;
+      case 'hl:feedback': copyHlFeedback(); break;
       case 'tab:close': if (t) closeTab(t.id); else api.closeWindow(); break;
       case 'tab:cycle': cycleTab(arg); break;
       case 'tab:reopen': reopenClosed(); break;

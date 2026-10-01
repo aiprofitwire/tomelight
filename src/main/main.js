@@ -78,6 +78,7 @@ const DEFAULT_SETTINGS = {
   imgMaxWidth: 1600,
   imgQuality: 82,
   notesVisible: true,
+  hlTipSeen: false,
   showLineBreaks: true,
   writeTipSeen: false,
   imgShape: 'original',
@@ -551,6 +552,27 @@ ipcMain.handle('notes:count', () => {
 });
 ipcMain.handle('notes:clear-all', () => { notesDb = {}; persistNotes(true); broadcast('notes:cleared'); return true; });
 
+/* ---- highlights: same idea as notes, stored apart so each can be cleared on its own ---- */
+let hlDb = null;
+let hlTimer = null;
+const hlFile = () => path.join(app.getPath('userData'), 'highlights.json');
+function highlights() {
+  if (!hlDb) { try { hlDb = JSON.parse(fs.readFileSync(hlFile(), 'utf8')); } catch { hlDb = {}; } }
+  return hlDb;
+}
+function persistHighlights(now = false) {
+  clearTimeout(hlTimer);
+  const write = () => { try { fs.mkdirSync(path.dirname(hlFile()), { recursive: true }); fs.writeFileSync(hlFile(), JSON.stringify(hlDb, null, 1)); } catch (e) { console.error('highlights save failed', e); } };
+  if (now) write(); else hlTimer = setTimeout(write, 400);
+}
+ipcMain.handle('hl:get', (_e, file) => highlights()[file] || []);
+ipcMain.handle('hl:set', (_e, { file, list }) => {
+  const db = highlights();
+  if (list && list.length) db[file] = list; else delete db[file];
+  persistHighlights();
+  return true;
+});
+
 ipcMain.handle('img:save-zip', async (e, bytes) => {
   const stamp = new Date().toISOString().slice(0, 10);
   const res = await dialog.showSaveDialog(winOf(e), {
@@ -657,6 +679,8 @@ function buildMenu() {
         { label: 'Copy for Web (Clean HTML)', accelerator: 'CmdOrCtrl+Alt+H', click: () => send('copy:as', 'html') },
         { label: 'Copy for Social (Plain Text)', accelerator: 'CmdOrCtrl+Alt+C', click: () => send('copy:as', 'plain') },
         { type: 'separator' },
+        { label: 'Highlight Selection', accelerator: 'CmdOrCtrl+Shift+H', click: () => send('hl:add') },
+        { label: 'Copy Highlights as AI Feedback', click: () => send('hl:feedback') },
         { label: 'Add Sticky Note', accelerator: 'CmdOrCtrl+Alt+N', click: () => send('note:add') },
         { label: 'Show / Hide Sticky Notes', accelerator: 'CmdOrCtrl+Alt+Shift+N', click: () => send('note:toggle') },
         { type: 'separator' },
@@ -779,7 +803,7 @@ if (!gotLock) {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow({ restore: settings.restoreSession });
   });
-  app.on('before-quit', () => { quitting = true; persistSettings(true); if (notesDb) persistNotes(true); });
+  app.on('before-quit', () => { quitting = true; persistSettings(true); if (notesDb) persistNotes(true); if (hlDb) persistHighlights(true); });
   app.on('window-all-closed', () => {
     persistSettings(true);
     if (!isMac) app.quit();

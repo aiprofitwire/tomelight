@@ -70,6 +70,11 @@ Pin a note to any section of a Markdown or HTML file. Notes live inside Tomeligh
 
 <img src="docs/screens/notes.png" alt="A sticky note next to a section of a document" width="100%" />
 
+### Highlight, then hand it back to your AI
+Select any passage and pick a color: yellow for Important, pink for Fix this, blue for Question, green for Keep. Click a highlight to add a note. When you're done reading, **Copy as AI feedback** turns everything into one message, grouped by what to fix, what to answer and what to keep, ready to paste into ChatGPT, Claude or Gemini. Highlights live inside Tomelight like your notes, so the file is never touched, and they find their place again after the AI rewrites it.
+
+<img src="docs/screens/highlights.png" alt="Highlights in 4 colors with a note popover open on a newsletter draft" width="100%" />
+
 ### Themes
 Wire (the default, a cyber-noir palette from Metadata Marketer), Nebula, Arcane and Parchment, plus Auto to follow macOS light and dark mode.
 
@@ -107,6 +112,7 @@ Requires macOS 12 Monterey or later.
 | Tidy formatting | `⌥⌘T` |
 | Image Studio | `⇧⌘I` |
 | Add sticky note / show or hide notes | `⌥⌘N` / `⇧⌥⌘N` |
+| Highlight selection | `⇧⌘H` |
 | Text size | `⌘+` / `⌘−` / `⌘0` |
 | Find / focus mode | `⌘F` / `⇧⌘F` |
 | Export as PDF / HTML | `⇧⌘P` / `⇧⌘E` |

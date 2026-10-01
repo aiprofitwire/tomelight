@@ -11,7 +11,7 @@ const COMMANDS = [
   'file:save', 'file:save-all', 'file:reveal', 'file:new', 'export:pdf', 'export:html', 'edit:undo', 'edit:redo',
   'ui:find', 'ui:palette', 'ui:quick-open', 'ui:toggle-sidebar', 'ui:panel', 'ui:focus', 'ui:settings', 'ui:shortcuts',
   'view:set-mode', 'view:toggle-edit', 'view:zoom', 'doc:toggle-done', 'doc:complete-all',
-  'copy:as', 'edit:paste-md', 'edit:select-all', 'note:add', 'note:toggle', 'doc:tidy', 'img:optimize',
+  'copy:as', 'edit:paste-md', 'edit:select-all', 'note:add', 'note:toggle', 'hl:add', 'hl:feedback', 'doc:tidy', 'img:optimize',
   'tab:close', 'tab:cycle', 'tab:reopen', 'tab:close-others', 'tab:close-all',
 ];
 
@@ -63,6 +63,8 @@ contextBridge.exposeInMainWorld('tomelight', {
   notesSet: (file, notes) => ipcRenderer.invoke('notes:set', { file, notes }),
   notesCount: () => ipcRenderer.invoke('notes:count'),
   notesClearAll: () => ipcRenderer.invoke('notes:clear-all'),
+  hlGet: (file) => ipcRenderer.invoke('hl:get', file),
+  hlSet: (file, list) => ipcRenderer.invoke('hl:set', { file, list }),
   pageUrl: (file) => ipcRenderer.invoke('page:url', file),
   pagePreview: (file, html) => ipcRenderer.invoke('page:preview', { file, html }),
   saveZip: (bytes) => ipcRenderer.invoke('img:save-zip', bytes),
