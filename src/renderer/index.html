@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; img-src * file: data: blob:; media-src * file: data: blob:; style-src 'self' 'unsafe-inline' file:; font-src 'self' file: data:; script-src 'self' file: 'unsafe-eval'; frame-src tlpage: file: data: blob: about: https: http:; connect-src 'self' file: data: blob:" />
+  <title>Tomelight</title>
+  <link rel="stylesheet" href="renderer.css" />
+</head>
+<body class="booting">
+  <div id="app">
+    <header class="titlebar" id="titlebar">
+      <div class="tb-left">
+        <div class="traffic-space"></div>
+        <button class="icon-btn" id="btn-sidebar" data-tip="Sidebar  ⌘\"></button>
+        <div class="crumbs" id="crumbs"></div>
+      </div>
+      <div class="tb-right">
+        <button class="progress-pill" id="progress" hidden data-tip="Jump to next open task">
+          <svg class="ring" viewBox="0 0 36 36"><circle class="ring-bg" cx="18" cy="18" r="15"/><circle class="ring-fg" cx="18" cy="18" r="15"/></svg>
+          <span class="progress-text" id="progress-text">0/0</span>
+        </button>
+        <button class="pill-btn" id="btn-copy" hidden data-tip="Copy for email, web or social"></button>
+        <button class="seal-btn" id="btn-seal" hidden data-tip="Mark as done  ⌘D"></button>
+        <div class="segmented" id="modes"></div>
+        <button class="icon-btn" id="btn-studio" data-tip="Image Studio  ⇧⌘I"></button>
+        <button class="palette-btn" id="btn-palette" data-tip="Command palette"><span class="pb-icon"></span><span class="pb-label">Search</span><kbd>⌘K</kbd></button>
+        <button class="icon-btn" id="btn-more" data-tip="More"></button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar" id="sidebar">
+        <section class="side-open">
+          <div class="side-head"><span class="sh-title">Open Files</span><span class="sh-count" id="tab-count"></span><span class="sh-spacer"></span><button class="icon-btn xs" id="btn-close-all" data-tip="Close all tabs"></button><button class="icon-btn xs" id="btn-hide-side" data-tip="Hide sidebar  ⌘\"></button></div>
+          <div class="tabs-list" id="tabs-list"></div>
+        </section>
+        <div class="side-switch" id="side-switch">
+          <button data-panel="folder">Folder</button>
+          <button data-panel="outline">Outline</button>
+          <span class="switch-glider"></span>
+        </div>
+        <div class="side-body" id="side-body"></div>
+        <div class="side-resizer" id="side-resizer"></div>
+      </aside>
+
+      <main class="stage" id="stage">
+        <div class="banner" id="banner" hidden></div>
+        <section class="studio" id="studio" hidden></section>
+        <button class="sidebar-reveal" id="sidebar-reveal" type="button" data-tip="Show sidebar  ⌘\"></button>
+        <section class="pane editor-pane" id="editor-pane"><div class="md-toolbar" id="md-toolbar"></div><div class="editor-host" id="editor-host"></div></section>
+        <section class="pane write-pane" id="write-pane">
+          <div class="write-toolbar" id="write-toolbar"></div>
+          <div class="write-scroll" id="write-scroll"><div id="write-host"></div></div>
+        </section>
+        <div class="pane-divider"></div>
+        <section class="pane preview-pane" id="preview-pane">
+          <article class="tome" id="tome"></article>
+          <div class="notes-layer" id="notes-layer"></div>
+        </section>
+        <aside class="notes-tray" id="notes-tray" hidden></aside>
+        <section class="pane frame-pane" id="frame-pane">
+          <iframe id="frame" title="HTML document" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-popups-to-escape-sandbox allow-downloads"></iframe>
+        </section>
+
+        <div class="welcome" id="welcome">
+          <canvas class="welcome-gl" id="welcome-gl"></canvas>
+          <div class="welcome-inner">
+            <div class="welcome-emblem" id="welcome-emblem"></div>
+            <h1 class="wordmark" id="wordmark">Tomelight</h1>
+            <p class="tagline">Your docs, beautifully lit.</p>
+            <div class="welcome-actions">
+              <button class="btn btn-primary" id="w-open"><span class="bi"></span>Open File <kbd>⌘O</kbd></button>
+              <button class="btn btn-ghost" id="w-folder"><span class="bi"></span>Open Folder <kbd>⇧⌘O</kbd></button>
+              <button class="btn btn-ghost" id="w-new"><span class="bi"></span>New File <kbd>⌘N</kbd></button>
+            </div>
+            <div class="welcome-recent" id="welcome-recent"></div>
+            <p class="welcome-hint">Drop files, a folder, or photos (they open in Image Studio) · <kbd>⌘P</kbd> quick open · <kbd>⌘K</kbd> for everything</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <footer class="statusbar" id="statusbar">
+      <div class="sb-left"><span class="sb-type" id="sb-type"></span><span id="sb-words"></span><span class="sb-notes" id="sb-notes" hidden></span></div>
+      <div class="sb-right"><span id="sb-sel" class="sb-sel" hidden></span><span id="sb-tasks"></span><span class="sb-save" id="sb-save"></span><div class="zoom-ctl" id="zoom-ctl"><button type="button" id="zoom-out" data-tip="Smaller text  ⌘−">A</button><input type="range" id="zoom-range" min="70" max="200" step="5" value="100" aria-label="Text size" /><button type="button" id="zoom-in" data-tip="Bigger text  ⌘+">A</button><button type="button" id="zoom-val" data-tip="Reset to 100%  ⌘0">100%</button></div></div>
+    </footer>
+    <div class="sel-bubble" id="sel-bubble" hidden></div>
+  </div>
+
+  <!-- overlays -->
+  <div class="findbar" id="findbar" hidden>
+    <span class="fb-icon"></span>
+    <input id="find-input" type="text" placeholder="Find in file" spellcheck="false" />
+    <span class="fb-count" id="find-count"></span>
+    <button class="icon-btn sm" id="find-prev" data-tip="Previous  ⇧↩"></button>
+    <button class="icon-btn sm" id="find-next" data-tip="Next  ↩"></button>
+    <button class="icon-btn sm" id="find-close" data-tip="Close  esc"></button>
+  </div>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="palette" id="palette" hidden>
+    <div class="palette-input"><span class="pi-icon"></span><input id="palette-input" placeholder="Search commands, headings, files…" spellcheck="false" /><kbd>esc</kbd></div>
+    <div class="palette-list" id="palette-list"></div>
+  </div>
+  <div class="menu-pop" id="menu-pop" hidden></div>
+  <div class="modal" id="modal" hidden></div>
+  <div class="lightbox" id="lightbox" hidden><img alt="" /></div>
+  <div class="dropzone" id="dropzone" hidden><div class="dz-inner"><div class="dz-emblem"></div><p>Release to open · photos go to Image Studio</p></div></div>
+  <div class="toasts" id="toasts"></div>
+  <div class="tooltip" id="tooltip" hidden></div>
+  <div class="help-pop" id="help-pop" hidden></div>
+  <div class="link-pop" id="link-pop" hidden><input id="link-input" type="text" placeholder="Paste a link, like https://…" spellcheck="false" /><button class="btn sm btn-primary" id="link-apply">Add link</button><button class="btn sm btn-ghost" id="link-remove">Remove</button></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

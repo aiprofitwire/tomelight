@@ -1,0 +1,19 @@
+name: Feature idea
+description: Suggest something that would save you time
+labels: [idea]
+body:
+  - type: textarea
+    id: job
+    attributes:
+      label: What are you trying to get done?
+      description: Describe the job, not the button. For example, "I tick 30 boxes in a content calendar every Monday."
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you do it today?
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would make it easier?

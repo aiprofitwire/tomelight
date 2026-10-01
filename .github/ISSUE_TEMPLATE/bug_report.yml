@@ -1,0 +1,52 @@
+name: Bug report
+description: Something looks wrong or doesn't work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time. The more exact the steps, the faster the fix.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a Markdown file with a table
+        2. Click the checkbox in the second column
+        3. The first column changes instead
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: Sample file
+      description: Paste or attach the smallest file that shows the problem. Remove anything private first.
+  - type: input
+    id: version
+    attributes:
+      label: Tomelight version
+      description: Tomelight menu, About Tomelight
+    validations:
+      required: true
+  - type: dropdown
+    id: mac
+    attributes:
+      label: Mac
+      options: [Apple Silicon, Intel]
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 26.0
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshots

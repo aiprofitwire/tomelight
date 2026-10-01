@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.34" r="0.78">
+      <stop offset="0" stop-color="#17325a"/>
+      <stop offset="0.45" stop-color="#0c1830"/>
+      <stop offset="1" stop-color="#04070f"/>
+    </radialGradient>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#c9f6fc"/>
+      <stop offset="1" stop-color="#5fd2e6"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.3" stop-color="#bff6ff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#6fe0ee" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="cone" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8eeaf6" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6fe0ee" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="bloom" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#9ef0fa" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6fe0ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.10"/>
+    </linearGradient>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="softer" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.55"/></filter>
+    <clipPath id="sq"><rect x="100" y="100" width="824" height="824" rx="186"/></clipPath>
+  </defs>
+  <rect x="100" y="120" width="824" height="824" rx="186" fill="#000" opacity="0.5" filter="url(#soft)"/>
+  <g clip-path="url(#sq)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#bg)"/>
+    <path d="M512 590 L300 100 L724 100 Z" fill="url(#cone)" opacity="0.55" filter="url(#soft)"/>
+    <path d="M512 590 L420 100 L604 100 Z" fill="url(#cone)" opacity="0.7" filter="url(#softer)"/>
+    <path d="M503 590 L512 100 L521 590 Z" fill="url(#beam)" filter="url(#softer)"/>
+    <path d="M507 590 L512 120 L517 590 Z" fill="url(#beam)"/>
+    <circle cx="512" cy="590" r="170" fill="url(#bloom)" opacity="0.8"/>
+    <g fill="#e8fdff">
+      <circle cx="486" cy="420" r="3.2" opacity=".8"/><circle cx="544" cy="330" r="2.4" opacity=".7"/>
+      <circle cx="470" cy="250" r="2" opacity=".55"/><circle cx="560" cy="470" r="2.6" opacity=".6"/>
+      <circle cx="528" cy="210" r="1.8" opacity=".5"/>
+    </g>
+    <g filter="url(#shadow)">
+      <path d="M494 606 C 450 570 384 553 304 564 L 304 752 C 384 741 450 758 494 794 Z" fill="url(#page)"/>
+      <path d="M530 606 C 574 570 640 553 720 564 L 720 752 C 640 741 574 758 530 794 Z" fill="url(#page)"/>
+    </g>
+    <rect x="100" y="100" width="824" height="420" fill="url(#glass)"/>
+  </g>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="185" fill="none" stroke="url(#rim)" stroke-width="3"/>
+</svg>
