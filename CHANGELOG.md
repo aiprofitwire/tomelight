@@ -4,7 +4,7 @@ All notable changes to Tomelight are listed here. Dates are in YYYY-MM-DD.
 
 ## [Unreleased]
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-10-14
 
 ### Added
 - Highlighter. Select text in Read or Reader view and pick a color from the selection bar, or press `⇧⌘H`. Highlights are painted over the page and stored inside Tomelight, so your file is never changed.
